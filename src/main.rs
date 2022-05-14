@@ -1,10 +1,12 @@
 mod lexer;
 mod token;
+mod parser;
+mod ast;
 
 use std::fs;
 use std::env;
 use lexer::Lexer;
-use token::Token;
+use parser::Parser;
 
 fn main() {
   let file_path_option = env::args().nth(1);
@@ -25,11 +27,9 @@ fn main() {
 
   let lexer = Lexer::new(file_content);
 
-  let mut tokens = Vec::<Token>::new();
+  let mut parser = Parser::new(lexer);
 
-  for token in lexer {
-    tokens.push(token);
-  }
+  let program = parser.parse();
 
-  println!("{:?}", tokens);
+  println!("{:?}", program);
 }

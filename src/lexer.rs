@@ -39,24 +39,24 @@ impl Lexer {
       self.read();
     }
   }
-}
 
-impl Iterator for Lexer {
-  type Item = Token;
-
-  fn next(&mut self) -> Option<Token> {
-    if self.next >= self.source.len() {
-      return None;
-    }
-
+  pub fn match_token(&mut self) -> Token {
     self.skip_whitespace();
 
-    let t: Token = match self.char {
-      ';' => Token::new(TokenKind::EndOfLine, ";".to_owned()),
-      '=' => Token::new(TokenKind::OperatorAssignment, "=".to_owned()),
+    return match self.char {
+      ';' | '\0' => {
+        self.read();
+
+        Token::new(TokenKind::EndOfLine, ";".to_owned())
+      },
+      '=' => {
+        self.read();
+
+        Token::new(TokenKind::OperatorAssignment, "=".to_owned())
+      },
       '"' | '\'' | '`' => {
         let string_symbol = self.char;
-        
+
         let mut buffer = String::new();
 
         self.read();
@@ -82,6 +82,7 @@ impl Iterator for Lexer {
 
         self.read();
 
+        // TODO add scientific and hex notation
         while
           self.char.is_numeric() ||
           self.char == '.' ||
@@ -120,12 +121,46 @@ impl Iterator for Lexer {
 
         Token::new(kind, buffer)
       },
-      _ => unimplemented!()
+      _ => {
+        println!("{:?}", self.char);
+
+        unimplemented!()
+      }
     };
+  }
 
-    self.read();
+  pub fn peek(&mut self) -> Option<Token> {
+    if self.next >= self.source.len() {
+      return None;
+    }
 
-    return Some(t);
+    let old_current = self.current;
+    let old_next = self.next;
+    let old_char = self.char;
+
+    self.char = self.source[self.next];
+
+    let token = self.match_token();
+
+    self.current = old_current;
+    self.next = old_next;
+    self.char = old_char;
+
+    return Some(token);
+  }
+}
+
+impl Iterator for Lexer {
+  type Item = Token;
+
+  fn next(&mut self) -> Option<Token> {
+    if self.next >= self.source.len() {
+      return None;
+    }
+
+    let token = self.match_token();
+
+    return Some(token);
   
   }
 }

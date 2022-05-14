@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenKind {
   Identifier,
   OperatorAssignment,
@@ -10,8 +10,8 @@ pub enum TokenKind {
 
 #[derive(Debug)]
 pub struct Token {
-  kind: TokenKind,
-  literal: String,
+  pub kind: TokenKind,
+  pub literal: String,
 }
 
 impl Token {

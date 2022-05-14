@@ -1,2 +1,1 @@
-const __foo5 = "bar";
-let num = 12345;
+let foo = 12345.6;
