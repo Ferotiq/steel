@@ -4,6 +4,7 @@ mod token;
 use std::fs;
 use std::env;
 use lexer::Lexer;
+use token::Token;
 
 fn main() {
   let file_path_option = env::args().nth(1);
@@ -22,7 +23,13 @@ fn main() {
     panic!("Could not open file for reading.");
   };
 
-  let mut lexer = Lexer::new(file_content);
+  let lexer = Lexer::new(file_content);
 
-  lexer.lex();
+  let mut tokens = Vec::<Token>::new();
+
+  for token in lexer {
+    tokens.push(token);
+  }
+
+  println!("{:?}", tokens);
 }

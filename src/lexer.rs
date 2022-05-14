@@ -4,142 +4,128 @@ use token::{Token, TokenKind};
 
 pub struct Lexer {
   source: Vec<char>,
-  counter: usize,
+  current: usize,
+  next: usize,
+  char: char,
 }
 
 impl Lexer {
-  pub fn new(content: String) -> Self {
-    Self {
-      source: content.chars().collect(),
-      counter: 0
-    }
+  pub fn new(input: String) -> Self {
+    let mut s = Self {
+      source: input.chars().collect(),
+      current: 0,
+      next: 1,
+      char: '\0'
+    };
+
+    s.char = s.source[s.current];
+
+    return s;
   }
 
-  pub fn lex(&mut self) {
-    let mut tokens = Vec::<Token>::new();
-
-    loop {
-      let c = self.current_char();
-
-      match c {
-        ';' => {
-          tokens.push(Token::new(TokenKind::EndOfLine, ";".to_owned()));
-
-          if !self.inc() {
-            break;
-          }
-        },
-        '=' => {
-          tokens.push(Token::new(TokenKind::OperatorAssignment, "=".to_owned()));
-
-          if !self.inc() {
-            break;
-          }
-        },
-        '"' | '\'' | '`' => {
-          if !self.inc() {
-            break;
-          }
-
-          let mut buffer = String::new();
-
-          // TODO add support for templates
-          while self.current_char() != c {
-            // TODO improve backslash escaping
-            if self.current_char() == '\\' {
-              if !self.inc() {
-                break;
-              }
-            }
-
-            buffer.push(self.current_char());
-  
-            if !self.inc() {
-              break;
-            }
-          }
-
-          tokens.push(Token::new(TokenKind::LiteralString, buffer));
-
-          if !self.inc() {
-            break;
-          }
-        },
-        _ if c.is_numeric() => {
-          let mut buffer = String::new();
-
-          buffer.push(c);
-
-          if !self.inc() {
-            break;
-          }
-
-          while
-            self.current_char().is_numeric() ||
-            self.current_char() == '.' ||
-            self.current_char() == '_'
-          {
-            if self.current_char() != '_' {
-              buffer.push(self.current_char());
-            }
-
-            if !self.inc() {
-              break;
-            }
-          }
-
-          tokens.push(Token::new(TokenKind::Number, buffer));
-        },
-        _ if self.current_char().is_alphabetic() || self.current_char() == '_' => {
-          let mut buffer = String::new();
-
-          buffer.push(c);
-
-          if !self.inc() {
-            break;
-          }
-
-          while 
-            self.current_char().is_alphabetic() ||
-            self.current_char().is_numeric() ||
-            self.current_char() == '_'
-          {
-            buffer.push(self.current_char());
-
-            if !self.inc() {
-              break;
-            }
-          }
-
-          let kind: TokenKind = match buffer.as_str() {
-            "const" | "let" => TokenKind::Declarator,
-            _ => TokenKind::Identifier
-          };
-
-          tokens.push(Token::new(kind, buffer));
-        },
-        _ => {
-          if !self.inc() {
-            break;
-          }
-        },
-      }
-    }
-
-    println!("{:?}", tokens);
-  }
-
-  fn current_char(&self) -> char {
-    *self.source.get(self.counter).unwrap()
-  }
-
-  fn inc(&mut self) -> bool {
-    if self.counter < self.source.len() - 1 {
-      self.counter += 1;
-
-      return true;
+  fn read(&mut self) {
+    if self.next >= self.source.len() {
+      self.char = '\0';
     } else {
-      return false;
+      self.char = self.source[self.next];
     }
+
+    self.current = self.next;
+    self.next = self.current + 1;
+  }
+
+  fn skip_whitespace(&mut self) {
+    while self.char.is_whitespace() {
+      self.read();
+    }
+  }
+}
+
+impl Iterator for Lexer {
+  type Item = Token;
+
+  fn next(&mut self) -> Option<Token> {
+    if self.next >= self.source.len() {
+      return None;
+    }
+
+    self.skip_whitespace();
+
+    let t: Token = match self.char {
+      ';' => Token::new(TokenKind::EndOfLine, ";".to_owned()),
+      '=' => Token::new(TokenKind::OperatorAssignment, "=".to_owned()),
+      '"' | '\'' | '`' => {
+        let string_symbol = self.char;
+        
+        let mut buffer = String::new();
+
+        self.read();
+
+        // TODO add support for templates
+        while self.char != string_symbol {
+          // TODO improve backslash escaping
+          if self.char == '\\' {
+            self.read();
+          }
+
+          buffer.push(self.char);
+
+          self.read();
+        }
+
+        Token::new(TokenKind::LiteralString, buffer)
+      },
+      _ if self.char.is_numeric() => {
+        let mut buffer = String::new();
+
+        buffer.push(self.char);
+
+        self.read();
+
+        while
+          self.char.is_numeric() ||
+          self.char == '.' ||
+          self.char == '_'
+        {
+          if self.char != '_' {
+            buffer.push(self.char);
+          }
+
+          self.read();
+        }
+
+        Token::new(TokenKind::Number, buffer)
+      },
+      _ if self.char.is_alphabetic() || self.char == '_' => {
+        let mut buffer = String::new();
+
+        buffer.push(self.char);
+
+        self.read();
+
+        while 
+          self.char.is_alphabetic() ||
+          self.char.is_numeric() ||
+          self.char == '_'
+        {
+          buffer.push(self.char);
+
+          self.read();
+        }
+
+        let kind: TokenKind = match buffer.as_str() {
+          "const" | "let" => TokenKind::Declarator,
+          _ => TokenKind::Identifier
+        };
+
+        Token::new(kind, buffer)
+      },
+      _ => unimplemented!()
+    };
+
+    self.read();
+
+    return Some(t);
+  
   }
 }
