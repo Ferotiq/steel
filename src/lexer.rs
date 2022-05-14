@@ -54,6 +54,26 @@ impl Lexer {
 
         Token::new(TokenKind::OperatorAssignment, "=".to_owned())
       },
+      '+' => {
+        self.read();
+
+        Token::new(TokenKind::OperatorInfixPlus, "+".to_owned())
+      },
+      '-' => {
+        self.read();
+
+        Token::new(TokenKind::OperatorInfixMinus, "-".to_owned())
+      },
+      '*' => {
+        self.read();
+
+        Token::new(TokenKind::OperatorInfixMultiply, "*".to_owned())
+      },
+      '/' => {
+        self.read();
+
+        Token::new(TokenKind::OperatorInfixDivide, "/".to_owned())
+      },
       '"' | '\'' | '`' => {
         let string_symbol = self.char;
 

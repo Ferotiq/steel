@@ -2,6 +2,10 @@
 pub enum TokenKind {
   Identifier,
   OperatorAssignment,
+  OperatorInfixPlus,
+  OperatorInfixMinus,
+  OperatorInfixMultiply,
+  OperatorInfixDivide,
   Declarator,
   LiteralString,
   Number,
